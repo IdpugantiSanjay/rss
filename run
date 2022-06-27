@@ -1,0 +1,11 @@
+source=$(./RSS.Cli "LIST SOURCES" | fzf)
+if [ ! -z "$source" -a "$source" != " " ]; then
+	articleName=$(./RSS.Cli "LIST ARTICLES IN SOURCE" "$source" | fzf)
+fi
+if [ ! -z "$articleName" -a "$articleName" != " " ]; then
+	link=$(./RSS.Cli "GET ARTICLE LINK" "$source" "$articleName")
+fi
+if [ ! -z "$link" -a "$link" != " " ]; then
+	microsoft-edge $link &
+fi
+exit 0
