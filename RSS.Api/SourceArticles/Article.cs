@@ -1,6 +1,6 @@
 namespace RSS.Api.SourceArticles;
 
-public class Article
+public record Article
 {
     public string SourceName { get; init; } = null!;
     
@@ -10,3 +10,5 @@ public class Article
     
     public Guid Id { get; init; }
 }
+
+public record UserFavoriteArticle(string Username, DateTimeOffset CreatedTime): Article;

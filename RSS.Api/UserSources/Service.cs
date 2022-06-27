@@ -1,66 +1,66 @@
-using System.ServiceModel.Syndication;
-using System.Xml;
 using Cassandra.Mapping;
 using JetBrains.Annotations;
+using RSS.Shared;
 
-namespace RSS.Api.Sources;
+namespace RSS.Api.UserSources;
+
+using SourceService = Sources.Service;
 
 public class Service
 {
     private readonly IMapper _mapper;
+    private readonly SourceService _sourceService;
 
-    public Service(IMapper mapper)
+    public Service(IMapper mapper, SourceService sourceService)
     {
         _mapper = mapper;
+        _sourceService = sourceService;
     }
 
-    public record ListInput(string Username);
-
-    public record ListOutput(IEnumerable<ListOutputEntity> Entities);
-
-    [UsedImplicitly]
-    public record ListOutputEntity(string Name, string Url);
-
-    public async Task<ListOutput> List(ListInput input)
+    public async Task<ListUserSourceResponse> List(ListUserSourceRequest userSourceRequest)
     {
         const string cql = @"
-            SELECT name, url FROM rss.user_sources
+            SELECT name FROM rss.user_sources
             WHERE username = ?
         ";
-        var vms = await _mapper.FetchAsync<ListOutputEntity>(cql, input.Username);
+        var vms = await _mapper.FetchAsync<ListUserSourceResponseEntity>(cql, userSourceRequest.Username);
         return new(vms);
     }
 
-    public record CreateInput(string Username, string Url);
     
-    public async Task Create(CreateInput input)
+
+    public async Task<UserSource> Create(CreateUserSourceRequest userSourceRequest)
     {
-        var reader = XmlReader.Create(input.Url);
-        var feed = SyndicationFeed.Load(reader);
-        var source = new UserSource {Name = feed.Title.Text, Url = input.Url, Username = input.Username};
-        await _mapper.InsertAsync(source);
+        var source = await _sourceService.Create(userSourceRequest.Url, userSourceRequest.SourceName);
+        var userSource = new UserSource {Name = source.Name, Username = userSourceRequest.Username};
+
+        var existingUserSource = _mapper.SingleOrDefault<UserSource>(@"
+            SELECT * FROM rss.user_sources WHERE username = ? AND name = ?
+        ", userSourceRequest.Username , source.Name);
+
+        if (existingUserSource is { }) return existingUserSource;
+        
+        await _mapper.InsertAsync(userSource);
+
+        return userSource;
     }
 
-    public async Task Remove(string name)
-    {
-        const string cql = @"
-            DELETE FROM rss.user_sources
-            WHERE name = ?
-        ";
-        await _mapper.DeleteAsync(cql, name);
-    }
+    // public async Task Remove(string username, string name)
+    // {
+    //     const string cql = @"
+    //         DELETE FROM rss.user_sources
+    //         WHERE username = ? AND name = ?
+    //     ";
+    //     await _mapper.DeleteAsync<UserSource>(cql, username, name);
+    // }
 
-    public record GetOptions();
-
-    public record GetInput(string Username, Guid Id, GetOptions Options);
-
-    public async Task<UserSource> Get(GetInput input)
-    {
-        const string cql = @"
-           SELECT name, url FROM rss.user_sources
-           WHERE username = ? AND id = ?
-        ";
-
-        return await _mapper.SingleAsync<UserSource>(cql, input.Username, input.Id);
-    }
+    // public async Task<UserSource> Get(GetInput input)
+    // {
+    //     const string cql = @"
+    //        SELECT name, url FROM rss.user_sources
+    //        WHERE username = ? AND id = ?
+    //     ";
+    //
+    //     return await _mapper.SingleAsync<UserSource>(cql, input.Username, input.Id);
+    // }
 }

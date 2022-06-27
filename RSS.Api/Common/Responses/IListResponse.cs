@@ -1,4 +1,4 @@
-namespace Plutus.Api.Common.Responses;
+namespace RSS.Api.Common.Responses;
 
 public interface IListResponse<T>
 {

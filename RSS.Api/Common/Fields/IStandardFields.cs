@@ -1,8 +1,8 @@
-namespace Plutus.Api.Common.Fields;
+namespace RSS.Api.Common.Fields;
 
 public interface IStandardFields
 {
-    public DateTime CreateTime { get; }
+    public DateTimeOffset CreateTime { get; }
     
-    public DateTime UpdateTime { get; }
+    public DateTimeOffset UpdateTime { get; }
 }

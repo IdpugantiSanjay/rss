@@ -1,4 +1,4 @@
-namespace Plutus.Api.Common.Requests;
+namespace RSS.Api.Common.Requests;
 
 public interface IListRequest
 {
@@ -7,5 +7,4 @@ public interface IListRequest
     public string PageToken { get; init; }
     
     public string? OrderBy { get; init; }
-
 }
